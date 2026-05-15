@@ -1,13 +1,24 @@
 // ============================================
 // validator.js
-// COMPLETE FINAL VERSION
+// COMPLETE FINAL WORKING VERSION
 // ============================================
 
 function clean(value) {
 
-  return String(value || "")
+  if (
+    value === null ||
+    value === undefined
+  ) {
+
+    return "";
+
+  }
+
+  return String(value)
     .trim()
-    .replace(/\s+/g, " ");
+    .replace(/\.0$/, "")
+    .replace(/\s+/g, "")
+    .toUpperCase();
 
 }
 
@@ -128,11 +139,6 @@ function runValidation(
     basicProductKey
   );
 
-  console.log(
-    "Basic File Sample:",
-    basicData[0]
-  );
-
   // ============================================
   // CONTENT FILE KEYS
   // ============================================
@@ -245,7 +251,7 @@ function runValidation(
   );
 
   // ============================================
-  // FIND STOCK COLUMN
+  // STOCK COLUMN
   // ============================================
 
   const allStockKey =
@@ -290,7 +296,7 @@ function runValidation(
     ) {
 
       activeProductMap[
-        productId
+        clean(productId)
       ] = true;
 
     }
@@ -329,8 +335,9 @@ function runValidation(
         r[articleKey]
       );
 
-    articleMap[sellerSku] =
-      articleNo;
+    articleMap[
+      sellerSku
+    ] = articleNo;
 
   }
 
@@ -350,8 +357,9 @@ function runValidation(
         r[shopeeKey]
       );
 
-    ecomMap[articleNo] =
-      shopee;
+    ecomMap[
+      articleNo
+    ] = shopee;
 
   }
 
@@ -369,9 +377,11 @@ function runValidation(
     const status =
       clean(
         r[tcStatusKey]
-      ).toUpperCase();
+      );
 
-    tcMap[sellerSku] = {
+    tcMap[
+      sellerSku
+    ] = {
 
       tcStatus:
         status === "ACTIVE"
@@ -393,7 +403,9 @@ function runValidation(
         r[allSkuKey]
       );
 
-    stockMap[sellerSku] = {
+    stockMap[
+      sellerSku
+    ] = {
 
       tcStock:
         num(
@@ -431,12 +443,19 @@ function runValidation(
     // MP STATUS
     // ============================================
 
-    const mpStatus =
+    let mpStatus =
+      "Inactive";
+
+    if (
       activeProductMap[
-        productId
+        clean(productId)
       ]
-      ? "Active"
-      : "Inactive";
+    ) {
+
+      mpStatus =
+        "Active";
+
+    }
 
     // ============================================
     // MP STOCK
@@ -452,8 +471,9 @@ function runValidation(
     // ============================================
 
     const tcStatus =
-      tcMap[sellerSku]
-        ?.tcStatus
+      tcMap[
+        sellerSku
+      ]?.tcStatus
       || "Inactive";
 
     // ============================================
@@ -461,26 +481,30 @@ function runValidation(
     // ============================================
 
     const tcStock =
-      stockMap[sellerSku]
-        ?.tcStock || 0;
+      stockMap[
+        sellerSku
+      ]?.tcStock || 0;
 
     const reservedStock =
-      stockMap[sellerSku]
-        ?.reservedStock || 0;
+      stockMap[
+        sellerSku
+      ]?.reservedStock || 0;
 
     // ============================================
     // ECOM STATUS
     // ============================================
 
     const articleNo =
-      articleMap[sellerSku];
+      articleMap[
+        sellerSku
+      ];
 
     const ecomValue =
       clean(
         ecomMap[
           articleNo
         ]
-      ).toUpperCase();
+      );
 
     let ecomStatus =
       "Inactive";
@@ -516,7 +540,7 @@ function runValidation(
 
     }
 
-    // STOCK 0
+    // 0 STOCK
 
     else if (
       ecomStatus ===
@@ -535,12 +559,7 @@ function runValidation(
 
     // ACTIVE
 
-    else if (
-      ecomStatus ===
-      "Active"
-      &&
-      tcStock > 0
-    ) {
+    else {
 
       finalStatus =
         "Active";
@@ -612,7 +631,7 @@ function runValidation(
     }
 
     // ============================================
-    // OUTPUT ROW
+    // OUTPUT
     // ============================================
 
     output.push({
