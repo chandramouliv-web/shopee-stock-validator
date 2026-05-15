@@ -1,191 +1,307 @@
-// =========================
+// ======================================
 // app.js
-// =========================
+// COMPLETE VERSION
+// ======================================
 
 let finalOutput = [];
 
-const loaderContainer =
-  document.getElementById(
-    "loaderContainer"
-  );
+// ======================================
+// READ EXCEL
+// ======================================
 
-const loaderText =
-  document.getElementById(
-    "loaderText"
-  );
+function readExcel(file) {
 
-document
-  .getElementById("runBtn")
-  .addEventListener("click", async () => {
-
-    try {
-
-      loaderContainer.style.display =
-        "flex";
-
-      updateLoader(
-        "Reading MP File..."
-      );
-
-      const mpData =
-        await readExcel("mpFile");
-
-      updateLoader(
-        "Reading Basic Info File..."
-      );
-
-      const basicData =
-        await readExcel("basicFile");
-
-      updateLoader(
-        "Reading Tracker File..."
-      );
-
-      const contentData =
-        await readExcel("contentFile");
-
-      updateLoader(
-        "Reading TC File..."
-      );
-
-      const tcData =
-        await readExcel("tcFile");
-
-      updateLoader(
-        "Reading zEcom File..."
-      );
-
-      const zecomData =
-        await readExcel("zecomFile");
-
-      updateLoader(
-        "Reading All File..."
-      );
-
-      const allData =
-        await readExcel("allFile");
-
-      updateLoader(
-        "Running Validation..."
-      );
-
-      await delay(100);
-
-      finalOutput = runValidation(
-        mpData,
-        basicData,
-        contentData,
-        tcData,
-        zecomData,
-        allData
-      );
-
-      updateLoader(
-        "Rendering Output..."
-      );
-
-      await delay(100);
-
-      renderSummary(finalOutput);
-
-      renderTable(finalOutput);
-
-      updateLoader(
-        "Completed Successfully ✅"
-      );
-
-      setTimeout(() => {
-
-        loaderContainer.style.display =
-          "none";
-
-      }, 2000);
-
-    } catch (err) {
-
-      console.error(err);
-
-      updateLoader(
-        "Error while processing ❌"
-      );
-
-      alert(
-        "Error while processing files.\nCheck browser console."
-      );
-
-    }
-
-  });
-
-function updateLoader(text) {
-
-  loaderText.innerText = text;
-
-}
-
-function delay(ms) {
-
-  return new Promise(resolve =>
-    setTimeout(resolve, ms)
-  );
-
-}
-
-async function readExcel(id) {
-
-  return new Promise((resolve, reject) => {
-
-    const file =
-      document.getElementById(id).files[0];
-
-    if (!file) {
-
-      reject(`Missing file: ${id}`);
-      return;
-
-    }
+  return new Promise((resolve) => {
 
     const reader = new FileReader();
 
-    reader.onload = function(e) {
+    reader.onload = (e) => {
 
-      try {
+      const data =
+        new Uint8Array(
+          e.target.result
+        );
 
-        const data =
-          new Uint8Array(e.target.result);
+      const workbook =
+        XLSX.read(data, {
+          type: "array"
+        });
 
-        const workbook =
-          XLSX.read(data, {
-            type: "array"
-          });
+      const sheetName =
+        workbook.SheetNames[0];
 
-        const sheet =
-          workbook.Sheets[
-            workbook.SheetNames[0]
-          ];
+      const sheet =
+        workbook.Sheets[sheetName];
 
-        const json =
-          XLSX.utils.sheet_to_json(sheet, {
-            defval: ""
-          });
+      const json =
+        XLSX.utils.sheet_to_json(
+          sheet
+        );
 
-        resolve(json);
-
-      } catch (error) {
-
-        reject(error);
-
-      }
+      resolve(json);
 
     };
-
-    reader.onerror = reject;
 
     reader.readAsArrayBuffer(file);
 
   });
 
 }
+
+// ======================================
+// UPDATE LOADER TEXT
+// ======================================
+
+function updateLoader(text) {
+
+  document.getElementById(
+    "loaderText"
+  ).innerText = text;
+
+}
+
+// ======================================
+// SHOW LOADER
+// ======================================
+
+function showLoader() {
+
+  document.getElementById(
+    "loaderContainer"
+  ).style.display = "flex";
+
+}
+
+// ======================================
+// HIDE LOADER
+// ======================================
+
+function hideLoader() {
+
+  document.getElementById(
+    "loaderContainer"
+  ).style.display = "none";
+
+}
+
+// ======================================
+// RUN BUTTON
+// ======================================
+
+document
+  .getElementById("runBtn")
+  .addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        showLoader();
+
+        // ======================================
+        // GET FILES
+        // ======================================
+
+        const mpFile =
+          document.getElementById(
+            "mpFile"
+          ).files[0];
+
+        const basicFile =
+          document.getElementById(
+            "basicFile"
+          ).files[0];
+
+        const contentFile =
+          document.getElementById(
+            "contentFile"
+          ).files[0];
+
+        const tcFile =
+          document.getElementById(
+            "tcFile"
+          ).files[0];
+
+        const zecomFile =
+          document.getElementById(
+            "zecomFile"
+          ).files[0];
+
+        const allFile =
+          document.getElementById(
+            "allFile"
+          ).files[0];
+
+        // ======================================
+        // VALIDATION
+        // ======================================
+
+        if (
+          !mpFile ||
+          !basicFile ||
+          !contentFile ||
+          !tcFile ||
+          !zecomFile ||
+          !allFile
+        ) {
+
+          alert(
+            "Please upload all files"
+          );
+
+          hideLoader();
+
+          return;
+
+        }
+
+        // ======================================
+        // READ MP FILE
+        // ======================================
+
+        updateLoader(
+          "Reading MP File..."
+        );
+
+        const mpData =
+          await readExcel(
+            mpFile
+          );
+
+        // ======================================
+        // READ BASIC FILE
+        // ======================================
+
+        updateLoader(
+          "Reading Basic Info File..."
+        );
+
+        const basicData =
+          await readExcel(
+            basicFile
+          );
+
+        // ======================================
+        // READ CONTENT FILE
+        // ======================================
+
+        updateLoader(
+          "Reading Tracker / Content File..."
+        );
+
+        const contentData =
+          await readExcel(
+            contentFile
+          );
+
+        // ======================================
+        // READ TC FILE
+        // ======================================
+
+        updateLoader(
+          "Reading TC File..."
+        );
+
+        const tcData =
+          await readExcel(
+            tcFile
+          );
+
+        // ======================================
+        // READ ZECOM FILE
+        // ======================================
+
+        updateLoader(
+          "Reading zEcom File..."
+        );
+
+        const zecomData =
+          await readExcel(
+            zecomFile
+          );
+
+        // ======================================
+        // READ ALL FILE
+        // ======================================
+
+        updateLoader(
+          "Reading All File..."
+        );
+
+        const allData =
+          await readExcel(
+            allFile
+          );
+
+        // ======================================
+        // RUN VALIDATION
+        // ======================================
+
+        updateLoader(
+          "Running Validation..."
+        );
+
+        finalOutput =
+          runValidation(
+            mpData,
+            basicData,
+            contentData,
+            tcData,
+            zecomData,
+            allData
+          );
+
+        // ======================================
+        // RENDER TABLE
+        // ======================================
+
+        updateLoader(
+          "Preparing Output..."
+        );
+
+        renderTable(
+          finalOutput
+        );
+
+        renderSummary(
+          finalOutput
+        );
+
+        // ======================================
+        // COMPLETE
+        // ======================================
+
+        updateLoader(
+          "Completed Successfully ✅"
+        );
+
+        setTimeout(() => {
+
+          hideLoader();
+
+        }, 1500);
+
+      }
+
+      catch (err) {
+
+        console.error(err);
+
+        alert(
+          "Error while processing files"
+        );
+
+        hideLoader();
+
+      }
+
+    }
+
+  );
+
+// ======================================
+// RENDER SUMMARY
+// ======================================
 
 function renderSummary(data) {
 
@@ -194,48 +310,59 @@ function renderSummary(data) {
       "summary"
     );
 
-  const total = data.length;
+  const total =
+    data.length;
 
-  const mismatch =
+  const issues =
     data.filter(
-      x => x["Final Check"] === "False"
+      x =>
+        x["Final Check"] ===
+        "False"
     ).length;
 
-  const stockMismatch =
+  const stockIssues =
     data.filter(
-      x => x["Stock Check"] === "False"
+      x =>
+        x["Stock Check"] ===
+        "False"
     ).length;
 
   const allGood =
     data.filter(
-      x => x["Action"] === "All Good"
+      x =>
+        x["Action"] ===
+        "All Good"
     ).length;
 
   summary.innerHTML = `
 
     <div class="summary-card">
-      <h3>Total SKU</h3>
-      <p>${total}</p>
+      <h3>Total</h3>
+      <h2>${total}</h2>
     </div>
 
     <div class="summary-card">
-      <h3>Status Mismatch</h3>
-      <p>${mismatch}</p>
+      <h3>Status Issues</h3>
+      <h2>${issues}</h2>
     </div>
 
     <div class="summary-card">
-      <h3>Stock Mismatch</h3>
-      <p>${stockMismatch}</p>
+      <h3>Stock Issues</h3>
+      <h2>${stockIssues}</h2>
     </div>
 
     <div class="summary-card">
       <h3>All Good</h3>
-      <p>${allGood}</p>
+      <h2>${allGood}</h2>
     </div>
 
   `;
 
 }
+
+// ======================================
+// RENDER TABLE
+// ======================================
 
 function renderTable(data) {
 
@@ -246,86 +373,126 @@ function renderTable(data) {
 
   table.innerHTML = "";
 
-  if (!data.length) return;
+  if (!data.length) {
+
+    table.innerHTML =
+      "<tr><td>No Data</td></tr>";
+
+    return;
+
+  }
+
+  // HEADER
 
   const headers =
     Object.keys(data[0]);
 
-  let html = "<tr>";
+  let headerHTML =
+    "<tr>";
 
   headers.forEach(h => {
 
-    html += `<th>${h}</th>`;
+    headerHTML +=
+      `<th>${h}</th>`;
 
   });
 
-  html += "</tr>";
+  headerHTML +=
+    "</tr>";
 
-  const limitedData =
-    data.slice(0, 3000);
+  table.innerHTML +=
+    headerHTML;
 
-  limitedData.forEach(row => {
+  // ROWS
 
-    let rowClass = "";
+  data.forEach(row => {
+
+    let rowClass =
+      "green";
 
     if (
-      row["Final Check"] === "False"
+      row["Final Check"] ===
+      "False"
     ) {
 
-      rowClass = "red";
-
-    } else {
-
-      rowClass = "green";
+      rowClass =
+        "red";
 
     }
 
-    html += `<tr class="${rowClass}">`;
+    else if (
+      row["Stock Check"] ===
+      "False"
+    ) {
+
+      rowClass =
+        "yellow";
+
+    }
+
+    let tr =
+      `<tr class="${rowClass}">`;
 
     headers.forEach(h => {
 
-      html += `<td>${row[h]}</td>`;
+      tr +=
+        `<td>${row[h]}</td>`;
 
     });
 
-    html += "</tr>";
+    tr +=
+      "</tr>";
+
+    table.innerHTML +=
+      tr;
 
   });
 
-  table.innerHTML = html;
-
 }
+
+// ======================================
+// DOWNLOAD OUTPUT
+// ======================================
 
 document
   .getElementById(
     "downloadBtn"
   )
-  .addEventListener("click", () => {
+  .addEventListener(
+    "click",
+    () => {
 
-    if (!finalOutput.length) {
+      if (
+        !finalOutput.length
+      ) {
 
-      alert("No output available.");
-      return;
+        alert(
+          "No Output Found"
+        );
+
+        return;
+
+      }
+
+      const worksheet =
+        XLSX.utils.json_to_sheet(
+          finalOutput
+        );
+
+      const workbook =
+        XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "Output"
+      );
+
+      XLSX.writeFile(
+        workbook,
+        "Shopee_Validation_Output.xlsx"
+      );
 
     }
 
-    const worksheet =
-      XLSX.utils.json_to_sheet(
-        finalOutput
-      );
-
-    const workbook =
-      XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(
-      workbook,
-      worksheet,
-      "Validation"
-    );
-
-    XLSX.writeFile(
-      workbook,
-      "Shopee_Validation_Output.xlsx"
-    );
-
-  });
+  );
