@@ -1,3 +1,11 @@
+function clean(value) {
+  return String(value || "").trim();
+}
+
+function num(value) {
+  return Number(value) || 0;
+}
+
 function runValidation(mpData, contentData, tcData, zecomData, allData) {
 
   let articleMap = {};
@@ -5,41 +13,103 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
   let tcMap = {};
   let stockMap = {};
 
+  // =========================
+  // TRACKER / CONTENT FILE
+  // =========================
+  // Seller SKU -> Article No
+
   contentData.forEach(r => {
-    articleMap[r["SKU"]] = r["Article No"];
+
+    let sellerSku =
+      clean(r["Seller SKU"] || r["SKU"]);
+
+    let articleNo =
+      clean(r["Article No"]);
+
+    articleMap[sellerSku] = articleNo;
+
   });
 
+  // =========================
+  // zECOM FILE
+  // =========================
+
   zecomData.forEach(r => {
-    ecomMap[r["Article No"]] = r["e-com"];
+
+    let articleNo =
+      clean(r["Article No"]);
+
+    let ecom =
+      clean(r["e-com"]);
+
+    ecomMap[articleNo] = ecom;
+
   });
+
+  // =========================
+  // TC FILE
+  // shopee-MY - TC.csv
+  // =========================
 
   tcData.forEach(r => {
 
-    tcMap[r["Seller SKU"]] = {
-      tcStatus: r["TC Status"],
-      max0: r["Max 0"]
+    let sellerSku =
+      clean(r["SKU"]);
+
+    tcMap[sellerSku] = {
+
+      tcStatus:
+        clean(r["Item status"]) === "ACTIVE"
+        ? "Active"
+        : "Inactive",
+
+      max0:
+        num(r["Max Quantity"]) <= 0
+        ? "Yes"
+        : "No"
+
     };
 
   });
+
+  // =========================
+  // ALL FILE
+  // =========================
 
   allData.forEach(r => {
 
-    stockMap[r["Seller SKU"]] = {
-      tcStock: Number(r["TC Stock"]) || 0,
-      reservedStock: Number(r["Reserved Stock"]) || 0
+    let sellerSku =
+      clean(r["sellerSKU"]);
+
+    stockMap[sellerSku] = {
+
+      tcStock:
+        num(r["MyStock-YCH-MY quantity"]),
+
+      reservedStock:
+        num(r["MyStock-YCH-MY reservedQuantity"])
+
     };
 
   });
+
+  // =========================
+  // CONSOLIDATED STOCK
+  // =========================
 
   let productStockMap = {};
   let dualStatusMap = {};
 
   mpData.forEach(r => {
 
-    let sellerSku = r["Seller SKU"];
-    let productId = r["Product ID"];
+    let sellerSku =
+      clean(r["SKU"] || r["Column1"]);
 
-    let tcStock = stockMap[sellerSku]?.tcStock || 0;
+    let productId =
+      clean(r["productId"] || r["Column4"]);
+
+    let tcStock =
+      stockMap[sellerSku]?.tcStock || 0;
 
     if (!productStockMap[productId]) {
       productStockMap[productId] = 0;
@@ -47,8 +117,11 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
 
     productStockMap[productId] += tcStock;
 
-    let articleNo = articleMap[sellerSku];
-    let ecom = ecomMap[articleNo];
+    let articleNo =
+      articleMap[sellerSku];
+
+    let ecom =
+      ecomMap[articleNo];
 
     if (!dualStatusMap[productId]) {
       dualStatusMap[productId] = new Set();
@@ -58,37 +131,65 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
 
   });
 
+  // =========================
+  // FINAL OUTPUT
+  // =========================
+
   let output = [];
 
   mpData.forEach(r => {
 
-    let sellerSku = r["Seller SKU"];
-    let productId = r["Product ID"];
+    let sellerSku =
+      clean(r["SKU"] || r["Column1"]);
 
-    let mpStatus = r["MP Status"];
-    let mpStock = Number(r["MP Stock"]) || 0;
+    let productId =
+      clean(r["productId"] || r["Column4"]);
 
-    let tcStatus = tcMap[sellerSku]?.tcStatus || "Inactive";
-    let max0 = tcMap[sellerSku]?.max0 || "No";
+    let mpStatus =
+      clean(r["Item status"] || r["Column6"]) === "ACTIVE"
+      ? "Active"
+      : "Inactive";
 
-    let tcStock = stockMap[sellerSku]?.tcStock || 0;
-    let reservedStock = stockMap[sellerSku]?.reservedStock || 0;
+    let mpStock =
+      num(r["In stock"] || r["Column11"]);
 
-    let articleNo = articleMap[sellerSku];
-    let ecom = ecomMap[articleNo];
+    let tcStatus =
+      tcMap[sellerSku]?.tcStatus || "Inactive";
 
-    let ecomStatus = ecom === "Yes"
+    let max0 =
+      tcMap[sellerSku]?.max0 || "No";
+
+    let tcStock =
+      stockMap[sellerSku]?.tcStock || 0;
+
+    let reservedStock =
+      stockMap[sellerSku]?.reservedStock || 0;
+
+    let articleNo =
+      articleMap[sellerSku];
+
+    let ecom =
+      ecomMap[articleNo];
+
+    let ecomStatus =
+      ecom === "Yes"
       ? "Active"
       : "Inactive";
 
     let dualStatus =
-      dualStatusMap[productId].size >= 2 ? 2 : 1;
+      dualStatusMap[productId]?.size >= 2
+      ? 2
+      : 1;
 
     let consolidatedStock =
-      productStockMap[productId];
+      productStockMap[productId] || 0;
 
     let finalStatus = "";
     let remarks = "";
+
+    // =========================
+    // DUAL STATUS = 1
+    // =========================
 
     if (dualStatus === 1) {
 
@@ -106,9 +207,16 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
 
         finalStatus = "Active";
         remarks = "Ecom Yes with Stock";
+
       }
 
-    } else {
+    }
+
+    // =========================
+    // DUAL STATUS = 2
+    // =========================
+
+    else {
 
       if (consolidatedStock === 0) {
 
@@ -124,9 +232,14 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
 
         finalStatus = "Active";
         remarks = "Set max";
+
       }
 
     }
+
+    // =========================
+    // CHECKS
+    // =========================
 
     let finalCheck =
       (mpStatus === tcStatus &&
@@ -139,50 +252,31 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
       ? "True"
       : "False";
 
-    let action = "";
+    let action = "All Good";
 
     if (finalCheck === "False") {
 
-      action = `Update status to ${finalStatus}`;
-
-    } else if (
-      finalCheck === "True" &&
-      stockCheck === "False"
-    ) {
-
-      if (
-        finalStatus === "Active" &&
-        remarks === "Ecom Yes with Stock" &&
-        reservedStock !== 0
-      ) {
-
-        action = "Due to Reserved Stock";
-
-      } else if (
-        finalStatus === "Active" &&
-        remarks === "Ecom Yes with Stock" &&
-        reservedStock === 0
-      ) {
-
-        action = "Make Impact";
-
-      } else if (
-        finalStatus === "Active" &&
-        remarks === "Set max"
-      ) {
-
-        action = "Set max product";
-
-      } else {
-
-        action = "Stock not pushed due to Inactive Status";
-      }
-
-    } else {
-
-      action = "All Good";
+      action =
+        "Update status to " + finalStatus;
 
     }
+
+    // =========================
+    // PUSH 0 STOCK
+    // =========================
+
+    if (
+      tcStock <= 0 &&
+      mpStock > 0
+    ) {
+
+      action += " | Push 0 stock update";
+
+    }
+
+    // =========================
+    // MAX LOGIC
+    // =========================
 
     if (
       (remarks === "Due to Ecom No" ||
@@ -203,34 +297,9 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
 
     }
 
-    if (remarks === "Due to 0 Stock") {
-
-      if (
-        ecom === "Yes" &&
-        max0 === "Yes"
-      ) {
-
-        action += " | Remove max";
-
-      } else if (
-        (ecom === "No" || ecom == null) &&
-        max0 === "No"
-      ) {
-
-        action += " | Set max";
-
-      }
-
-    }
-
-    if (
-      tcStock <= 0 &&
-      mpStock > 0
-    ) {
-
-      action += " | Push 0 stock update";
-
-    }
+    // =========================
+    // OUTPUT
+    // =========================
 
     output.push({
 
@@ -252,6 +321,8 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
     });
 
   });
+
+  console.log(output);
 
   return output;
 
