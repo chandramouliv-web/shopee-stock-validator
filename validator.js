@@ -1,8 +1,3 @@
-// ============================================
-// validator.js
-// COMPLETE FINAL WORKING VERSION
-// ============================================
-
 function clean(value) {
 
   if (
@@ -67,18 +62,10 @@ function runValidation(
   allData
 ) {
 
-  // ============================================
-  // REGION
-  // ============================================
-
   const region =
     document.getElementById(
       "regionSelect"
     )?.value || "MY";
-
-  // ============================================
-  // SAMPLE ROWS
-  // ============================================
 
   const mpRow = mpData[0];
   const basicRow = basicData[0];
@@ -87,135 +74,88 @@ function runValidation(
   const zecomRow = zecomData[0];
   const allRow = allData[0];
 
-  // ============================================
-  // MP FILE KEYS
-  // ============================================
+  // =========================
+  // MP FILE
+  // =========================
 
   const mpSkuKey =
     findKey(mpRow, [
-
-      "SKU",
-      "Seller SKU",
-      "seller_sku"
-
+      "SKU"
     ]);
 
   const mpProductKey =
     findKey(mpRow, [
-
       "Product ID",
-      "productId",
       "item_id"
-
     ]);
 
   const mpStockKey =
     findKey(mpRow, [
-
-      "Stock",
-      "MP Stock",
-      "In stock"
-
+      "Stock"
     ]);
 
-  // ============================================
-  // BASIC INFO FILE KEYS
-  // ============================================
+  // =========================
+  // BASIC INFO
+  // =========================
 
   const basicProductKey =
     findKey(basicRow, [
-
       "Product ID",
-      "productId",
-      "ProductId",
-      "Item ID",
       "item_id",
-      "model_id"
-
+      "Item ID"
     ]);
 
-  console.log(
-    "Basic Product Column:",
-    basicProductKey
-  );
-
-  // ============================================
-  // CONTENT FILE KEYS
-  // ============================================
+  // =========================
+  // CONTENT
+  // =========================
 
   const contentSkuKey =
     findKey(contentRow, [
-
-      "SKU",
       "Seller SKU",
-      "seller_sku"
-
+      "SKU"
     ]);
 
   const articleKey =
     findKey(contentRow, [
-
-      "Article No",
-      "Article"
-
+      "Article No"
     ]);
 
-  // ============================================
-  // ZECOM FILE KEYS
-  // ============================================
+  // =========================
+  // ZECOM
+  // =========================
 
   const zecomArticleKey =
     findKey(zecomRow, [
-
-      "Article No",
-      "Article"
-
+      "Article No"
     ]);
 
   const shopeeKey =
     findKey(zecomRow, [
-
       "Shopee"
-
     ]);
 
-  // ============================================
-  // TC FILE KEYS
-  // ============================================
+  // =========================
+  // TC
+  // =========================
 
   const tcSkuKey =
     findKey(tcRow, [
-
-      "SKU",
-      "Seller SKU",
-      "seller_sku"
-
+      "SKU"
     ]);
 
   const tcStatusKey =
     findKey(tcRow, [
-
-      "Item status",
-      "Status"
-
+      "Item status"
     ]);
 
-  // ============================================
-  // ALL FILE KEYS
-  // ============================================
+  // =========================
+  // ALL FILE
+  // =========================
 
   const allSkuKey =
     findKey(allRow, [
-
-      "sellerSKU",
-      "Seller SKU",
-      "SKU"
-
+      "sellerSKU"
     ]);
-
-  // ============================================
-  // REGION STOCK COLUMN
-  // ============================================
 
   let regionStockColumn = "";
 
@@ -233,53 +173,28 @@ function runValidation(
 
   }
 
-  else if (region === "PH") {
+  else {
 
     regionStockColumn =
       "MyStock-PH quantity";
 
   }
 
-  console.log(
-    "Selected Region:",
-    region
-  );
-
-  console.log(
-    "Region Stock Column:",
-    regionStockColumn
-  );
-
-  // ============================================
-  // STOCK COLUMN
-  // ============================================
-
   const allStockKey =
     findKey(allRow, [
-
       regionStockColumn
-
     ]);
 
   const allReservedKey =
     findKey(allRow, [
-
-      "reservedQuantity",
-      "Reserved Stock",
       "MyStock-YCH-MY reservedQuantity",
       "MyStock-YCH-SG reservedQuantity",
       "MyStock-PH reservedQuantity"
-
     ]);
 
-  console.log(
-    "Stock Column Found:",
-    allStockKey
-  );
-
-  // ============================================
-  // ACTIVE PRODUCT MAP
-  // ============================================
+  // =========================
+  // ACTIVE PRODUCTS
+  // =========================
 
   const activeProductMap = {};
 
@@ -290,10 +205,7 @@ function runValidation(
         r[basicProductKey]
       );
 
-    if (
-      productId &&
-      productId !== ""
-    ) {
+    if (productId) {
 
       activeProductMap[
         clean(productId)
@@ -303,25 +215,16 @@ function runValidation(
 
   }
 
-  console.log(
-    "Active Product Count:",
-    Object.keys(
-      activeProductMap
-    ).length
-  );
-
-  // ============================================
+  // =========================
   // MAPS
-  // ============================================
+  // =========================
 
   const articleMap = {};
   const ecomMap = {};
   const tcMap = {};
   const stockMap = {};
 
-  // ============================================
-  // CONTENT MAP
-  // ============================================
+  // CONTENT
 
   for (let r of contentData) {
 
@@ -341,9 +244,7 @@ function runValidation(
 
   }
 
-  // ============================================
-  // ZECOM MAP
-  // ============================================
+  // ZECOM
 
   for (let r of zecomData) {
 
@@ -363,9 +264,7 @@ function runValidation(
 
   }
 
-  // ============================================
-  // TC MAP
-  // ============================================
+  // TC
 
   for (let r of tcData) {
 
@@ -392,9 +291,7 @@ function runValidation(
 
   }
 
-  // ============================================
-  // STOCK MAP
-  // ============================================
+  // STOCK
 
   for (let r of allData) {
 
@@ -421,9 +318,9 @@ function runValidation(
 
   }
 
-  // ============================================
+  // =========================
   // OUTPUT
-  // ============================================
+  // =========================
 
   const output = [];
 
@@ -439,9 +336,9 @@ function runValidation(
         r[mpProductKey]
       );
 
-    // ============================================
+    // =========================
     // MP STATUS
-    // ============================================
+    // =========================
 
     let mpStatus =
       "Inactive";
@@ -457,18 +354,18 @@ function runValidation(
 
     }
 
-    // ============================================
+    // =========================
     // MP STOCK
-    // ============================================
+    // =========================
 
     const mpStock =
       num(
         r[mpStockKey]
       );
 
-    // ============================================
+    // =========================
     // TC STATUS
-    // ============================================
+    // =========================
 
     const tcStatus =
       tcMap[
@@ -476,9 +373,9 @@ function runValidation(
       ]?.tcStatus
       || "Inactive";
 
-    // ============================================
+    // =========================
     // TC STOCK
-    // ============================================
+    // =========================
 
     const tcStock =
       stockMap[
@@ -490,9 +387,9 @@ function runValidation(
         sellerSku
       ]?.reservedStock || 0;
 
-    // ============================================
+    // =========================
     // ECOM STATUS
-    // ============================================
+    // =========================
 
     const articleNo =
       articleMap[
@@ -510,7 +407,8 @@ function runValidation(
       "Inactive";
 
     if (
-      ecomValue === "YES"
+      ecomValue ===
+      "YES"
     ) {
 
       ecomStatus =
@@ -518,14 +416,12 @@ function runValidation(
 
     }
 
-    // ============================================
+    // =========================
     // FINAL STATUS
-    // ============================================
+    // =========================
 
     let finalStatus = "";
     let remarks = "";
-
-    // ECOM INACTIVE
 
     if (
       ecomStatus ===
@@ -539,8 +435,6 @@ function runValidation(
         "Due to Ecom No";
 
     }
-
-    // 0 STOCK
 
     else if (
       ecomStatus ===
@@ -557,8 +451,6 @@ function runValidation(
 
     }
 
-    // ACTIVE
-
     else {
 
       finalStatus =
@@ -569,9 +461,9 @@ function runValidation(
 
     }
 
-    // ============================================
+    // =========================
     // CHECKS
-    // ============================================
+    // =========================
 
     const finalCheck =
 
@@ -585,14 +477,12 @@ function runValidation(
       ? "True"
       : "False";
 
-    // ============================================
+    // =========================
     // ACTION
-    // ============================================
+    // =========================
 
     let action =
       "All Good";
-
-    // STATUS UPDATE
 
     if (
       finalCheck ===
@@ -605,8 +495,6 @@ function runValidation(
 
     }
 
-    // STOCK UPDATE
-
     if (
       stockCheck ===
       "False"
@@ -616,8 +504,6 @@ function runValidation(
         " | Push Stock Update";
 
     }
-
-    // PUSH 0 STOCK
 
     if (
       tcStock <= 0
@@ -630,9 +516,9 @@ function runValidation(
 
     }
 
-    // ============================================
+    // =========================
     // OUTPUT
-    // ============================================
+    // =========================
 
     output.push({
 
@@ -678,11 +564,6 @@ function runValidation(
     });
 
   }
-
-  console.log(
-    "Output Count:",
-    output.length
-  );
 
   return output;
 
