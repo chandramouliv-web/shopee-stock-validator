@@ -1,4 +1,13 @@
+// ============================================
+// app.js
+// COMPLETE OPTIMIZED FINAL VERSION
+// ============================================
+
 let finalOutput = [];
+
+// ============================================
+// READ EXCEL
+// ============================================
 
 function readExcel(
   file,
@@ -12,31 +21,48 @@ function readExcel(
 
     reader.onload = (e) => {
 
-      const data =
-        new Uint8Array(
-          e.target.result
+      try {
+
+        const data =
+          new Uint8Array(
+            e.target.result
+          );
+
+        const workbook =
+          XLSX.read(data, {
+            type: "array"
+          });
+
+        const sheetName =
+          workbook.SheetNames[0];
+
+        const sheet =
+          workbook.Sheets[sheetName];
+
+        const json =
+          XLSX.utils.sheet_to_json(
+            sheet,
+            {
+              range: skipRows,
+              defval: "",
+              raw: false
+            }
+          );
+
+        resolve(json);
+
+      }
+
+      catch (err) {
+
+        console.error(err);
+
+        alert(
+          "Error reading file: "
+          + file.name
         );
 
-      const workbook =
-        XLSX.read(data, {
-          type: "array"
-        });
-
-      const sheetName =
-        workbook.SheetNames[0];
-
-      const sheet =
-        workbook.Sheets[sheetName];
-
-      const json =
-        XLSX.utils.sheet_to_json(
-          sheet,
-          {
-            range: skipRows
-          }
-        );
-
-      resolve(json);
+      }
 
     };
 
@@ -46,29 +72,61 @@ function readExcel(
 
 }
 
+// ============================================
+// LOADER
+// ============================================
+
 function updateLoader(text) {
 
-  document.getElementById(
-    "loaderText"
-  ).innerText = text;
+  const loader =
+    document.getElementById(
+      "loaderText"
+    );
+
+  if (loader) {
+
+    loader.innerText =
+      text;
+
+  }
 
 }
 
 function showLoader() {
 
-  document.getElementById(
-    "loaderContainer"
-  ).style.display = "flex";
+  const loader =
+    document.getElementById(
+      "loaderContainer"
+    );
+
+  if (loader) {
+
+    loader.style.display =
+      "flex";
+
+  }
 
 }
 
 function hideLoader() {
 
-  document.getElementById(
-    "loaderContainer"
-  ).style.display = "none";
+  const loader =
+    document.getElementById(
+      "loaderContainer"
+    );
+
+  if (loader) {
+
+    loader.style.display =
+      "none";
+
+  }
 
 }
+
+// ============================================
+// RUN BUTTON
+// ============================================
 
 document
   .getElementById("runBtn")
@@ -79,6 +137,10 @@ document
       try {
 
         showLoader();
+
+        // ============================================
+        // FILES
+        // ============================================
 
         const mpFile =
           document.getElementById(
@@ -109,6 +171,33 @@ document
           document.getElementById(
             "allFile"
           ).files[0];
+
+        // ============================================
+        // CHECK FILES
+        // ============================================
+
+        if (
+          !mpFile ||
+          !basicFile ||
+          !contentFile ||
+          !tcFile ||
+          !zecomFile ||
+          !allFile
+        ) {
+
+          alert(
+            "Please upload all files"
+          );
+
+          hideLoader();
+
+          return;
+
+        }
+
+        // ============================================
+        // READ FILES
+        // ============================================
 
         updateLoader(
           "Reading MP File..."
@@ -165,8 +254,20 @@ document
             allFile
           );
 
+        // ============================================
+        // VALIDATION
+        // ============================================
+
         updateLoader(
           "Running Validation..."
+        );
+
+        await new Promise(
+          resolve =>
+            setTimeout(
+              resolve,
+              100
+            )
         );
 
         finalOutput =
@@ -179,19 +280,47 @@ document
             allData
           );
 
+        // ============================================
+        // TABLE
+        // ============================================
+
+        updateLoader(
+          "Rendering Output..."
+        );
+
+        await new Promise(
+          resolve =>
+            setTimeout(
+              resolve,
+              100
+            )
+        );
+
         renderTable(
           finalOutput
         );
 
+        // ============================================
+        // SUMMARY
+        // ============================================
+
+        renderSummary(
+          finalOutput
+        );
+
+        // ============================================
+        // COMPLETE
+        // ============================================
+
         updateLoader(
-          "Completed Successfully"
+          "Completed Successfully ✅"
         );
 
         setTimeout(() => {
 
           hideLoader();
 
-        }, 1500);
+        }, 1000);
 
       }
 
@@ -206,6 +335,223 @@ document
         hideLoader();
 
       }
+
+    }
+
+  );
+
+// ============================================
+// SUMMARY
+// ============================================
+
+function renderSummary(data) {
+
+  const summary =
+    document.getElementById(
+      "summary"
+    );
+
+  if (!summary) return;
+
+  const total =
+    data.length;
+
+  const statusIssues =
+    data.filter(
+      x =>
+        x["Final Check"] ===
+        "False"
+    ).length;
+
+  const stockIssues =
+    data.filter(
+      x =>
+        x["Stock Check"] ===
+        "False"
+    ).length;
+
+  const allGood =
+    data.filter(
+      x =>
+        x["Action"] ===
+        "All Good"
+    ).length;
+
+  summary.innerHTML = `
+
+    <div class="summary-card">
+      <h3>Total</h3>
+      <h2>${total}</h2>
+    </div>
+
+    <div class="summary-card">
+      <h3>Status Issues</h3>
+      <h2>${statusIssues}</h2>
+    </div>
+
+    <div class="summary-card">
+      <h3>Stock Issues</h3>
+      <h2>${stockIssues}</h2>
+    </div>
+
+    <div class="summary-card">
+      <h3>All Good</h3>
+      <h2>${allGood}</h2>
+    </div>
+
+  `;
+
+}
+
+// ============================================
+// TABLE
+// ============================================
+
+function renderTable(data) {
+
+  const table =
+    document.getElementById(
+      "outputTable"
+    );
+
+  if (!table) return;
+
+  table.innerHTML = "";
+
+  if (!data.length) {
+
+    table.innerHTML =
+      "<tr><td>No Data Found</td></tr>";
+
+    return;
+
+  }
+
+  // ============================================
+  // HEADERS
+  // ============================================
+
+  const headers =
+    Object.keys(data[0]);
+
+  let html =
+    "<thead><tr>";
+
+  headers.forEach(h => {
+
+    html +=
+      `<th>${h}</th>`;
+
+  });
+
+  html +=
+    "</tr></thead><tbody>";
+
+  // ============================================
+  // ROWS
+  // ============================================
+
+  for (
+    let i = 0;
+    i < data.length;
+    i++
+  ) {
+
+    const row =
+      data[i];
+
+    let rowClass =
+      "green";
+
+    if (
+      row["Final Check"] ===
+      "False"
+    ) {
+
+      rowClass =
+        "red";
+
+    }
+
+    else if (
+      row["Stock Check"] ===
+      "False"
+    ) {
+
+      rowClass =
+        "yellow";
+
+    }
+
+    html +=
+      `<tr class="${rowClass}">`;
+
+    headers.forEach(h => {
+
+      html +=
+        `<td>${row[h] ?? ""}</td>`;
+
+    });
+
+    html +=
+      "</tr>";
+
+  }
+
+  html +=
+    "</tbody>";
+
+  // ============================================
+  // SINGLE DOM UPDATE
+  // ============================================
+
+  table.innerHTML =
+    html;
+
+}
+
+// ============================================
+// DOWNLOAD
+// ============================================
+
+document
+  .getElementById(
+    "downloadBtn"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      if (
+        !finalOutput.length
+      ) {
+
+        alert(
+          "No Output Found"
+        );
+
+        return;
+
+      }
+
+      const worksheet =
+        XLSX.utils.json_to_sheet(
+          finalOutput
+        );
+
+      const workbook =
+        XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "Output"
+      );
+
+      XLSX.writeFile(
+        workbook,
+        "Shopee_Validation_Output.xlsx"
+      );
 
     }
 
