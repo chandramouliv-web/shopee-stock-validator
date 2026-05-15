@@ -1,29 +1,35 @@
 function clean(value) {
+
   return String(value || "")
     .trim()
     .replace(/\s+/g, " ");
+
 }
 
 function num(value) {
+
   return Number(value) || 0;
+
 }
 
 function findKey(row, possibleKeys) {
 
-  let keys = Object.keys(row);
+  const keys = Object.keys(row);
 
   for (let key of keys) {
 
-    let normalizedKey =
+    const normalized =
       clean(key).toLowerCase();
 
-    for (let possible of possibleKeys) {
+    for (let p of possibleKeys) {
 
       if (
-        normalizedKey ===
-        possible.toLowerCase()
+        normalized ===
+        p.toLowerCase()
       ) {
+
         return key;
+
       }
 
     }
@@ -31,6 +37,7 @@ function findKey(row, possibleKeys) {
   }
 
   return null;
+
 }
 
 function runValidation(
@@ -41,69 +48,77 @@ function runValidation(
   allData
 ) {
 
-  if (
-    !mpData.length ||
-    !contentData.length ||
-    !tcData.length ||
-    !zecomData.length ||
-    !allData.length
-  ) {
+  const mpRow = mpData[0];
+  const contentRow = contentData[0];
+  const tcRow = tcData[0];
+  const zecomRow = zecomData[0];
+  const allRow = allData[0];
 
-    alert("One or more files are empty.");
-
-    return [];
-  }
-
-  // =========================
-  // DETECT HEADERS
-  // =========================
-
-  let mpRow = mpData[0];
-  let contentRow = contentData[0];
-  let tcRow = tcData[0];
-  let zecomRow = zecomData[0];
-  let allRow = allData[0];
-
-  // MP FILE
   const mpSkuKey =
-    findKey(mpRow, ["SKU", "Seller SKU"]);
+    findKey(mpRow, [
+      "SKU",
+      "Seller SKU"
+    ]);
 
   const mpProductKey =
-    findKey(mpRow, ["productId", "Product ID"]);
+    findKey(mpRow, [
+      "productId",
+      "Product ID"
+    ]);
 
   const mpStatusKey =
-    findKey(mpRow, ["Item status", "MP Status"]);
+    findKey(mpRow, [
+      "Item status",
+      "MP Status"
+    ]);
 
   const mpStockKey =
-    findKey(mpRow, ["In stock", "MP Stock"]);
+    findKey(mpRow, [
+      "In stock",
+      "MP Stock"
+    ]);
 
-  // CONTENT FILE
   const contentSkuKey =
-    findKey(contentRow, ["SKU", "Seller SKU"]);
+    findKey(contentRow, [
+      "SKU",
+      "Seller SKU"
+    ]);
 
   const articleKey =
-    findKey(contentRow, ["Article No"]);
+    findKey(contentRow, [
+      "Article No"
+    ]);
 
-  // zECOM FILE
   const zecomArticleKey =
-    findKey(zecomRow, ["Article No"]);
+    findKey(zecomRow, [
+      "Article No"
+    ]);
 
   const ecomKey =
-    findKey(zecomRow, ["e-com"]);
+    findKey(zecomRow, [
+      "e-com"
+    ]);
 
-  // TC FILE
   const tcSkuKey =
-    findKey(tcRow, ["SKU", "Seller SKU"]);
+    findKey(tcRow, [
+      "SKU",
+      "Seller SKU"
+    ]);
 
   const tcStatusKey =
-    findKey(tcRow, ["Item status"]);
+    findKey(tcRow, [
+      "Item status"
+    ]);
 
   const tcMaxKey =
-    findKey(tcRow, ["Max Quantity"]);
+    findKey(tcRow, [
+      "Max Quantity"
+    ]);
 
-  // ALL FILE
   const allSkuKey =
-    findKey(allRow, ["sellerSKU"]);
+    findKey(allRow, [
+      "sellerSKU"
+    ]);
 
   const allStockKey =
     findKey(allRow, [
@@ -115,69 +130,41 @@ function runValidation(
       "MyStock-YCH-MY reservedQuantity"
     ]);
 
-  console.log({
-    mpSkuKey,
-    mpProductKey,
-    mpStatusKey,
-    mpStockKey,
-    contentSkuKey,
-    articleKey,
-    zecomArticleKey,
-    ecomKey,
-    tcSkuKey,
-    tcStatusKey,
-    tcMaxKey,
-    allSkuKey,
-    allStockKey,
-    allReservedKey
-  });
+  const articleMap = {};
+  const ecomMap = {};
+  const tcMap = {};
+  const stockMap = {};
 
-  // =========================
-  // MAPS
-  // =========================
+  for (let r of contentData) {
 
-  let articleMap = {};
-  let ecomMap = {};
-  let tcMap = {};
-  let stockMap = {};
-
-  // CONTENT
-  contentData.forEach(r => {
-
-    let sellerSku =
+    const sellerSku =
       clean(r[contentSkuKey]);
 
-    let articleNo =
+    articleMap[sellerSku] =
       clean(r[articleKey]);
 
-    articleMap[sellerSku] =
-      articleNo;
+  }
 
-  });
+  for (let r of zecomData) {
 
-  // zECOM
-  zecomData.forEach(r => {
-
-    let articleNo =
+    const articleNo =
       clean(r[zecomArticleKey]);
 
-    let ecom =
+    ecomMap[articleNo] =
       clean(r[ecomKey]);
 
-    ecomMap[articleNo] = ecom;
+  }
 
-  });
+  for (let r of tcData) {
 
-  // TC
-  tcData.forEach(r => {
-
-    let sellerSku =
+    const sellerSku =
       clean(r[tcSkuKey]);
 
     tcMap[sellerSku] = {
 
       tcStatus:
-        clean(r[tcStatusKey]) === "ACTIVE"
+        clean(r[tcStatusKey]) ===
+        "ACTIVE"
         ? "Active"
         : "Inactive",
 
@@ -188,12 +175,11 @@ function runValidation(
 
     };
 
-  });
+  }
 
-  // ALL
-  allData.forEach(r => {
+  for (let r of allData) {
 
-    let sellerSku =
+    const sellerSku =
       clean(r[allSkuKey]);
 
     stockMap[sellerSku] = {
@@ -206,114 +192,106 @@ function runValidation(
 
     };
 
-  });
+  }
 
-  // =========================
-  // STOCK CONSOLIDATION
-  // =========================
+  const productStockMap = {};
+  const dualStatusMap = {};
 
-  let productStockMap = {};
-  let dualStatusMap = {};
+  for (let r of mpData) {
 
-  mpData.forEach(r => {
-
-    let sellerSku =
+    const sellerSku =
       clean(r[mpSkuKey]);
 
-    let productId =
+    const productId =
       clean(r[mpProductKey]);
 
-    let tcStock =
+    const tcStock =
       stockMap[sellerSku]?.tcStock || 0;
 
     if (!productStockMap[productId]) {
+
       productStockMap[productId] = 0;
+
     }
 
     productStockMap[productId] +=
       tcStock;
 
-    let articleNo =
+    const articleNo =
       articleMap[sellerSku];
 
-    let ecom =
+    const ecom =
       ecomMap[articleNo];
 
     if (!dualStatusMap[productId]) {
+
       dualStatusMap[productId] =
         new Set();
+
     }
 
-    dualStatusMap[productId].add(
-      ecom
-    );
+    dualStatusMap[productId]
+      .add(ecom);
 
-  });
+  }
 
-  // =========================
-  // OUTPUT
-  // =========================
+  const output = [];
 
-  let output = [];
+  for (let r of mpData) {
 
-  mpData.forEach(r => {
-
-    let sellerSku =
+    const sellerSku =
       clean(r[mpSkuKey]);
 
-    let productId =
+    const productId =
       clean(r[mpProductKey]);
 
-    let mpStatus =
+    const mpStatus =
       clean(r[mpStatusKey]) ===
       "ACTIVE"
       ? "Active"
       : "Inactive";
 
-    let mpStock =
+    const mpStock =
       num(r[mpStockKey]);
 
-    let tcStatus =
+    const tcStatus =
       tcMap[sellerSku]?.tcStatus ||
       "Inactive";
 
-    let max0 =
+    const max0 =
       tcMap[sellerSku]?.max0 ||
       "No";
 
-    let tcStock =
+    const tcStock =
       stockMap[sellerSku]?.tcStock ||
       0;
 
-    let reservedStock =
+    const reservedStock =
       stockMap[sellerSku]
         ?.reservedStock || 0;
 
-    let articleNo =
+    const articleNo =
       articleMap[sellerSku];
 
-    let ecom =
+    const ecom =
       ecomMap[articleNo];
 
-    let ecomStatus =
+    const ecomStatus =
       ecom === "Yes"
       ? "Active"
       : "Inactive";
 
-    let dualStatus =
+    const dualStatus =
       dualStatusMap[productId]
         ?.size >= 2
       ? 2
       : 1;
 
-    let consolidatedStock =
-      productStockMap[productId] ||
-      0;
+    const consolidatedStock =
+      productStockMap[productId] || 0;
 
     let finalStatus = "";
     let remarks = "";
-
-    // =========================
 
     if (dualStatus === 1) {
 
@@ -363,15 +341,13 @@ function runValidation(
 
     }
 
-    // =========================
-
-    let finalCheck =
+    const finalCheck =
       (mpStatus === tcStatus &&
        tcStatus === finalStatus)
       ? "True"
       : "False";
 
-    let stockCheck =
+    const stockCheck =
       mpStock === tcStock
       ? "True"
       : "False";
@@ -396,27 +372,6 @@ function runValidation(
 
     }
 
-    if (
-      (remarks ===
-        "Due to Ecom No" ||
-       remarks === "Set max") &&
-      max0 === "No"
-    ) {
-
-      action += " | Set max";
-
-    }
-
-    if (
-      remarks ===
-        "Ecom Yes with Stock" &&
-      max0 === "Yes"
-    ) {
-
-      action += " | Remove max";
-
-    }
-
     output.push({
 
       "Seller SKU": sellerSku,
@@ -436,9 +391,7 @@ function runValidation(
 
     });
 
-  });
-
-  console.log(output);
+  }
 
   return output;
 
