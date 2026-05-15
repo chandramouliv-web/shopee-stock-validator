@@ -53,12 +53,29 @@ function runValidation(
   allData
 ) {
 
+  // =========================
+  // REGION SELECTION
+  // =========================
+
+  const region =
+    document.getElementById(
+      "regionSelect"
+    )?.value || "MY";
+
+  // =========================
+  // HEADER DETECTION
+  // =========================
+
   const mpRow = mpData[0];
   const basicRow = basicData[0];
   const contentRow = contentData[0];
   const tcRow = tcData[0];
   const zecomRow = zecomData[0];
   const allRow = allData[0];
+
+  // =========================
+  // MP FILE
+  // =========================
 
   const mpSkuKey =
     findKey(mpRow, [
@@ -68,21 +85,30 @@ function runValidation(
 
   const mpProductKey =
     findKey(mpRow, [
-      "productId",
-      "Product ID"
+      "Product ID",
+      "productId"
     ]);
 
   const mpStockKey =
     findKey(mpRow, [
-      "In stock",
-      "MP Stock"
+      "Stock",
+      "MP Stock",
+      "In stock"
     ]);
+
+  // =========================
+  // BASIC INFO FILE
+  // =========================
 
   const basicProductKey =
     findKey(basicRow, [
       "Product ID",
       "productId"
     ]);
+
+  // =========================
+  // CONTENT FILE
+  // =========================
 
   const contentSkuKey =
     findKey(contentRow, [
@@ -95,15 +121,23 @@ function runValidation(
       "Article No"
     ]);
 
+  // =========================
+  // zECOM FILE
+  // =========================
+
   const zecomArticleKey =
     findKey(zecomRow, [
       "Article No"
     ]);
 
-  const ecomKey =
+  const shopeeKey =
     findKey(zecomRow, [
-      "e-com"
+      "Shopee"
     ]);
+
+  // =========================
+  // TC FILE
+  // =========================
 
   const tcSkuKey =
     findKey(tcRow, [
@@ -116,25 +150,52 @@ function runValidation(
       "Item status"
     ]);
 
-  const tcMaxKey =
-    findKey(tcRow, [
-      "Max Quantity"
-    ]);
+  // =========================
+  // ALL FILE
+  // =========================
 
   const allSkuKey =
     findKey(allRow, [
       "sellerSKU"
     ]);
 
+  // REGION STOCK COLUMN
+  let stockColumn = "";
+
+  if (region === "MY") {
+
+    stockColumn =
+      "MyStock-YCH-MY quantity";
+
+  } else if (region === "SG") {
+
+    stockColumn =
+      "MyStock-YCH-SG quantity";
+
+  } else {
+
+    stockColumn =
+      "MyStock-PH quantity";
+
+  }
+
   const allStockKey =
     findKey(allRow, [
-      "MyStock-YCH-MY quantity"
+      stockColumn
     ]);
 
   const allReservedKey =
     findKey(allRow, [
-      "MyStock-YCH-MY reservedQuantity"
+      "reservedQuantity",
+      "Reserved Stock",
+      "MyStock-YCH-MY reservedQuantity",
+      "MyStock-YCH-SG reservedQuantity",
+      "MyStock-PH reservedQuantity"
     ]);
+
+  // =========================
+  // ACTIVE PRODUCT MAP
+  // =========================
 
   const activeProductMap = {};
 
@@ -148,10 +209,16 @@ function runValidation(
 
   }
 
+  // =========================
+  // MAPPING
+  // =========================
+
   const articleMap = {};
   const ecomMap = {};
   const tcMap = {};
   const stockMap = {};
+
+  // CONTENT
 
   for (let r of contentData) {
 
@@ -163,15 +230,22 @@ function runValidation(
 
   }
 
+  // zECOM
+
   for (let r of zecomData) {
 
     const articleNo =
       clean(r[zecomArticleKey]);
 
+    const shopee =
+      clean(r[shopeeKey]);
+
     ecomMap[articleNo] =
-      clean(r[ecomKey]);
+      shopee;
 
   }
+
+  // TC
 
   for (let r of tcData) {
 
@@ -184,16 +258,13 @@ function runValidation(
         clean(r[tcStatusKey]) ===
         "ACTIVE"
         ? "Active"
-        : "Inactive",
-
-      max0:
-        num(r[tcMaxKey]) <= 0
-        ? "Yes"
-        : "No"
+        : "Inactive"
 
     };
 
   }
+
+  // STOCK
 
   for (let r of allData) {
 
@@ -212,46 +283,9 @@ function runValidation(
 
   }
 
-  const productStockMap = {};
-  const dualStatusMap = {};
-
-  for (let r of mpData) {
-
-    const sellerSku =
-      clean(r[mpSkuKey]);
-
-    const productId =
-      clean(r[mpProductKey]);
-
-    const tcStock =
-      stockMap[sellerSku]?.tcStock || 0;
-
-    if (!productStockMap[productId]) {
-
-      productStockMap[productId] = 0;
-
-    }
-
-    productStockMap[productId] +=
-      tcStock;
-
-    const articleNo =
-      articleMap[sellerSku];
-
-    const ecom =
-      ecomMap[articleNo];
-
-    if (!dualStatusMap[productId]) {
-
-      dualStatusMap[productId] =
-        new Set();
-
-    }
-
-    dualStatusMap[productId]
-      .add(ecom);
-
-  }
+  // =========================
+  // OUTPUT
+  // =========================
 
   const output = [];
 
@@ -263,111 +297,140 @@ function runValidation(
     const productId =
       clean(r[mpProductKey]);
 
+    // =========================
+    // MP STATUS
+    // =========================
+
     const mpStatus =
       activeProductMap[productId]
       ? "Active"
       : "Inactive";
 
+    // =========================
+    // MP STOCK
+    // =========================
+
     const mpStock =
       num(r[mpStockKey]);
+
+    // =========================
+    // TC STATUS
+    // =========================
 
     const tcStatus =
       tcMap[sellerSku]?.tcStatus ||
       "Inactive";
 
+    // =========================
+    // TC STOCK
+    // =========================
+
     const tcStock =
-      stockMap[sellerSku]?.tcStock ||
-      0;
+      stockMap[sellerSku]
+        ?.tcStock || 0;
 
     const reservedStock =
       stockMap[sellerSku]
         ?.reservedStock || 0;
 
+    // =========================
+    // ECOM STATUS
+    // =========================
+
     const articleNo =
       articleMap[sellerSku];
 
-    const ecom =
-      ecomMap[articleNo];
+    const ecomValue =
+      clean(
+        ecomMap[articleNo]
+      ).toUpperCase();
 
-    const ecomStatus =
-      ecom === "Yes"
-      ? "Active"
-      : "Inactive";
+    let ecomStatus =
+      "Inactive";
 
-    const dualStatus =
-      dualStatusMap[productId]
-        ?.size >= 2
-      ? 2
-      : 1;
+    if (
+      ecomValue === "YES"
+    ) {
 
-    const consolidatedStock =
-      productStockMap[productId] || 0;
+      ecomStatus = "Active";
+
+    }
+
+    // =========================
+    // FINAL STATUS
+    // =========================
 
     let finalStatus = "";
     let remarks = "";
 
-    if (dualStatus === 1) {
+    if (
+      ecomStatus === "Inactive"
+    ) {
 
-      if (ecomStatus === "Inactive") {
+      finalStatus =
+        "Inactive";
 
-        finalStatus = "Inactive";
-        remarks = "Due to Ecom No";
-
-      } else if (
-        consolidatedStock === 0
-      ) {
-
-        finalStatus = "Inactive";
-        remarks = "Due to 0 Stock";
-
-      } else {
-
-        finalStatus = "Active";
-        remarks =
-          "Ecom Yes with Stock";
-
-      }
-
-    } else {
-
-      if (
-        consolidatedStock === 0
-      ) {
-
-        finalStatus = "Inactive";
-        remarks = "Due to 0 Stock";
-
-      } else if (
-        ecomStatus === "Active"
-      ) {
-
-        finalStatus = "Active";
-        remarks =
-          "Ecom Yes with Stock";
-
-      } else {
-
-        finalStatus = "Active";
-        remarks = "Set max";
-
-      }
+      remarks =
+        "Due to Ecom No";
 
     }
 
+    else if (
+      ecomStatus === "Active" &&
+      tcStock <= 0
+    ) {
+
+      finalStatus =
+        "Inactive";
+
+      remarks =
+        "Due to 0 Stock";
+
+    }
+
+    else if (
+      ecomStatus === "Active" &&
+      tcStock > 0
+    ) {
+
+      finalStatus =
+        "Active";
+
+      remarks =
+        "Ecom Yes with Stock";
+
+    }
+
+    // =========================
+    // CHECKS
+    // =========================
+
     const finalCheck =
-      (mpStatus === tcStatus &&
-       tcStatus === finalStatus)
+      (
+        mpStatus ===
+        finalStatus
+      )
       ? "True"
       : "False";
 
     const stockCheck =
-      mpStock === tcStock
+      (
+        mpStock ===
+        tcStock
+      )
       ? "True"
       : "False";
 
-    let action = "All Good";
+    // =========================
+    // ACTION
+    // =========================
 
-    if (finalCheck === "False") {
+    let action =
+      "All Good";
+
+    if (
+      finalCheck === "False"
+    ) {
 
       action =
         "Update status to " +
@@ -376,31 +439,58 @@ function runValidation(
     }
 
     if (
-      tcStock <= 0 &&
-      mpStock > 0
+      stockCheck === "False"
     ) {
 
       action +=
-        " | Push 0 stock update";
+        " | Push Stock Update";
 
     }
 
+    // =========================
+    // OUTPUT PUSH
+    // =========================
+
     output.push({
 
-      "Seller SKU": sellerSku,
-      "Product ID": productId,
-      "MP Status": mpStatus,
-      "MP Stock": mpStock,
-      "TC Status": tcStatus,
-      "TC Stock": tcStock,
-      "Reserved Stock": reservedStock,
-      "Ecom Status": ecomStatus,
-      "Dual Status": dualStatus,
-      "Final Status": finalStatus,
-      "Remarks": remarks,
-      "Final Check": finalCheck,
-      "Stock Check": stockCheck,
-      "Action": action
+      "Seller SKU":
+        sellerSku,
+
+      "Product ID":
+        productId,
+
+      "MP Status":
+        mpStatus,
+
+      "MP Stock":
+        mpStock,
+
+      "TC Status":
+        tcStatus,
+
+      "TC Stock":
+        tcStock,
+
+      "Reserved Stock":
+        reservedStock,
+
+      "Ecom Status":
+        ecomStatus,
+
+      "Final Status":
+        finalStatus,
+
+      "Remarks":
+        remarks,
+
+      "Final Check":
+        finalCheck,
+
+      "Stock Check":
+        stockCheck,
+
+      "Action":
+        action
 
     });
 
