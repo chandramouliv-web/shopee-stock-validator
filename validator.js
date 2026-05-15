@@ -1,70 +1,188 @@
 function clean(value) {
-  return String(value || "").trim();
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 function num(value) {
   return Number(value) || 0;
 }
 
-function runValidation(mpData, contentData, tcData, zecomData, allData) {
+function findKey(row, possibleKeys) {
+
+  let keys = Object.keys(row);
+
+  for (let key of keys) {
+
+    let normalizedKey =
+      clean(key).toLowerCase();
+
+    for (let possible of possibleKeys) {
+
+      if (
+        normalizedKey ===
+        possible.toLowerCase()
+      ) {
+        return key;
+      }
+
+    }
+
+  }
+
+  return null;
+}
+
+function runValidation(
+  mpData,
+  contentData,
+  tcData,
+  zecomData,
+  allData
+) {
+
+  if (
+    !mpData.length ||
+    !contentData.length ||
+    !tcData.length ||
+    !zecomData.length ||
+    !allData.length
+  ) {
+
+    alert("One or more files are empty.");
+
+    return [];
+  }
+
+  // =========================
+  // DETECT HEADERS
+  // =========================
+
+  let mpRow = mpData[0];
+  let contentRow = contentData[0];
+  let tcRow = tcData[0];
+  let zecomRow = zecomData[0];
+  let allRow = allData[0];
+
+  // MP FILE
+  const mpSkuKey =
+    findKey(mpRow, ["SKU", "Seller SKU"]);
+
+  const mpProductKey =
+    findKey(mpRow, ["productId", "Product ID"]);
+
+  const mpStatusKey =
+    findKey(mpRow, ["Item status", "MP Status"]);
+
+  const mpStockKey =
+    findKey(mpRow, ["In stock", "MP Stock"]);
+
+  // CONTENT FILE
+  const contentSkuKey =
+    findKey(contentRow, ["SKU", "Seller SKU"]);
+
+  const articleKey =
+    findKey(contentRow, ["Article No"]);
+
+  // zECOM FILE
+  const zecomArticleKey =
+    findKey(zecomRow, ["Article No"]);
+
+  const ecomKey =
+    findKey(zecomRow, ["e-com"]);
+
+  // TC FILE
+  const tcSkuKey =
+    findKey(tcRow, ["SKU", "Seller SKU"]);
+
+  const tcStatusKey =
+    findKey(tcRow, ["Item status"]);
+
+  const tcMaxKey =
+    findKey(tcRow, ["Max Quantity"]);
+
+  // ALL FILE
+  const allSkuKey =
+    findKey(allRow, ["sellerSKU"]);
+
+  const allStockKey =
+    findKey(allRow, [
+      "MyStock-YCH-MY quantity"
+    ]);
+
+  const allReservedKey =
+    findKey(allRow, [
+      "MyStock-YCH-MY reservedQuantity"
+    ]);
+
+  console.log({
+    mpSkuKey,
+    mpProductKey,
+    mpStatusKey,
+    mpStockKey,
+    contentSkuKey,
+    articleKey,
+    zecomArticleKey,
+    ecomKey,
+    tcSkuKey,
+    tcStatusKey,
+    tcMaxKey,
+    allSkuKey,
+    allStockKey,
+    allReservedKey
+  });
+
+  // =========================
+  // MAPS
+  // =========================
 
   let articleMap = {};
   let ecomMap = {};
   let tcMap = {};
   let stockMap = {};
 
-  // =========================
-  // TRACKER / CONTENT FILE
-  // =========================
-  // Seller SKU -> Article No
-
+  // CONTENT
   contentData.forEach(r => {
 
     let sellerSku =
-      clean(r["Seller SKU"] || r["SKU"]);
+      clean(r[contentSkuKey]);
 
     let articleNo =
-      clean(r["Article No"]);
+      clean(r[articleKey]);
 
-    articleMap[sellerSku] = articleNo;
+    articleMap[sellerSku] =
+      articleNo;
 
   });
 
-  // =========================
-  // zECOM FILE
-  // =========================
-
+  // zECOM
   zecomData.forEach(r => {
 
     let articleNo =
-      clean(r["Article No"]);
+      clean(r[zecomArticleKey]);
 
     let ecom =
-      clean(r["e-com"]);
+      clean(r[ecomKey]);
 
     ecomMap[articleNo] = ecom;
 
   });
 
-  // =========================
-  // TC FILE
-  // shopee-MY - TC.csv
-  // =========================
-
+  // TC
   tcData.forEach(r => {
 
     let sellerSku =
-      clean(r["SKU"]);
+      clean(r[tcSkuKey]);
 
     tcMap[sellerSku] = {
 
       tcStatus:
-        clean(r["Item status"]) === "ACTIVE"
+        clean(r[tcStatusKey]) === "ACTIVE"
         ? "Active"
         : "Inactive",
 
       max0:
-        num(r["Max Quantity"]) <= 0
+        num(r[tcMaxKey]) <= 0
         ? "Yes"
         : "No"
 
@@ -72,29 +190,26 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
 
   });
 
-  // =========================
-  // ALL FILE
-  // =========================
-
+  // ALL
   allData.forEach(r => {
 
     let sellerSku =
-      clean(r["sellerSKU"]);
+      clean(r[allSkuKey]);
 
     stockMap[sellerSku] = {
 
       tcStock:
-        num(r["MyStock-YCH-MY quantity"]),
+        num(r[allStockKey]),
 
       reservedStock:
-        num(r["MyStock-YCH-MY reservedQuantity"])
+        num(r[allReservedKey])
 
     };
 
   });
 
   // =========================
-  // CONSOLIDATED STOCK
+  // STOCK CONSOLIDATION
   // =========================
 
   let productStockMap = {};
@@ -103,10 +218,10 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
   mpData.forEach(r => {
 
     let sellerSku =
-      clean(r["SKU"] || r["Column1"]);
+      clean(r[mpSkuKey]);
 
     let productId =
-      clean(r["productId"] || r["Column4"]);
+      clean(r[mpProductKey]);
 
     let tcStock =
       stockMap[sellerSku]?.tcStock || 0;
@@ -115,7 +230,8 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
       productStockMap[productId] = 0;
     }
 
-    productStockMap[productId] += tcStock;
+    productStockMap[productId] +=
+      tcStock;
 
     let articleNo =
       articleMap[sellerSku];
@@ -124,15 +240,18 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
       ecomMap[articleNo];
 
     if (!dualStatusMap[productId]) {
-      dualStatusMap[productId] = new Set();
+      dualStatusMap[productId] =
+        new Set();
     }
 
-    dualStatusMap[productId].add(ecom);
+    dualStatusMap[productId].add(
+      ecom
+    );
 
   });
 
   // =========================
-  // FINAL OUTPUT
+  // OUTPUT
   // =========================
 
   let output = [];
@@ -140,30 +259,35 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
   mpData.forEach(r => {
 
     let sellerSku =
-      clean(r["SKU"] || r["Column1"]);
+      clean(r[mpSkuKey]);
 
     let productId =
-      clean(r["productId"] || r["Column4"]);
+      clean(r[mpProductKey]);
 
     let mpStatus =
-      clean(r["Item status"] || r["Column6"]) === "ACTIVE"
+      clean(r[mpStatusKey]) ===
+      "ACTIVE"
       ? "Active"
       : "Inactive";
 
     let mpStock =
-      num(r["In stock"] || r["Column11"]);
+      num(r[mpStockKey]);
 
     let tcStatus =
-      tcMap[sellerSku]?.tcStatus || "Inactive";
+      tcMap[sellerSku]?.tcStatus ||
+      "Inactive";
 
     let max0 =
-      tcMap[sellerSku]?.max0 || "No";
+      tcMap[sellerSku]?.max0 ||
+      "No";
 
     let tcStock =
-      stockMap[sellerSku]?.tcStock || 0;
+      stockMap[sellerSku]?.tcStock ||
+      0;
 
     let reservedStock =
-      stockMap[sellerSku]?.reservedStock || 0;
+      stockMap[sellerSku]
+        ?.reservedStock || 0;
 
     let articleNo =
       articleMap[sellerSku];
@@ -177,18 +301,18 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
       : "Inactive";
 
     let dualStatus =
-      dualStatusMap[productId]?.size >= 2
+      dualStatusMap[productId]
+        ?.size >= 2
       ? 2
       : 1;
 
     let consolidatedStock =
-      productStockMap[productId] || 0;
+      productStockMap[productId] ||
+      0;
 
     let finalStatus = "";
     let remarks = "";
 
-    // =========================
-    // DUAL STATUS = 1
     // =========================
 
     if (dualStatus === 1) {
@@ -198,7 +322,9 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
         finalStatus = "Inactive";
         remarks = "Due to Ecom No";
 
-      } else if (consolidatedStock === 0) {
+      } else if (
+        consolidatedStock === 0
+      ) {
 
         finalStatus = "Inactive";
         remarks = "Due to 0 Stock";
@@ -206,27 +332,27 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
       } else {
 
         finalStatus = "Active";
-        remarks = "Ecom Yes with Stock";
+        remarks =
+          "Ecom Yes with Stock";
 
       }
 
-    }
+    } else {
 
-    // =========================
-    // DUAL STATUS = 2
-    // =========================
-
-    else {
-
-      if (consolidatedStock === 0) {
+      if (
+        consolidatedStock === 0
+      ) {
 
         finalStatus = "Inactive";
         remarks = "Due to 0 Stock";
 
-      } else if (ecomStatus === "Active") {
+      } else if (
+        ecomStatus === "Active"
+      ) {
 
         finalStatus = "Active";
-        remarks = "Ecom Yes with Stock";
+        remarks =
+          "Ecom Yes with Stock";
 
       } else {
 
@@ -238,8 +364,6 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
     }
 
     // =========================
-    // CHECKS
-    // =========================
 
     let finalCheck =
       (mpStatus === tcStatus &&
@@ -248,7 +372,7 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
       : "False";
 
     let stockCheck =
-      (mpStock === tcStock)
+      mpStock === tcStock
       ? "True"
       : "False";
 
@@ -257,29 +381,24 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
     if (finalCheck === "False") {
 
       action =
-        "Update status to " + finalStatus;
+        "Update status to " +
+        finalStatus;
 
     }
-
-    // =========================
-    // PUSH 0 STOCK
-    // =========================
 
     if (
       tcStock <= 0 &&
       mpStock > 0
     ) {
 
-      action += " | Push 0 stock update";
+      action +=
+        " | Push 0 stock update";
 
     }
 
-    // =========================
-    // MAX LOGIC
-    // =========================
-
     if (
-      (remarks === "Due to Ecom No" ||
+      (remarks ===
+        "Due to Ecom No" ||
        remarks === "Set max") &&
       max0 === "No"
     ) {
@@ -289,17 +408,14 @@ function runValidation(mpData, contentData, tcData, zecomData, allData) {
     }
 
     if (
-      remarks === "Ecom Yes with Stock" &&
+      remarks ===
+        "Ecom Yes with Stock" &&
       max0 === "Yes"
     ) {
 
       action += " | Remove max";
 
     }
-
-    // =========================
-    // OUTPUT
-    // =========================
 
     output.push({
 
