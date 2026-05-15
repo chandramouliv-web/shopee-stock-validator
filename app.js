@@ -1,19 +1,14 @@
-// ======================================
-// app.js
-// COMPLETE VERSION
-// ======================================
-
 let finalOutput = [];
 
-// ======================================
-// READ EXCEL
-// ======================================
-
-function readExcel(file) {
+function readExcel(
+  file,
+  skipRows = 0
+) {
 
   return new Promise((resolve) => {
 
-    const reader = new FileReader();
+    const reader =
+      new FileReader();
 
     reader.onload = (e) => {
 
@@ -35,7 +30,10 @@ function readExcel(file) {
 
       const json =
         XLSX.utils.sheet_to_json(
-          sheet
+          sheet,
+          {
+            range: skipRows
+          }
         );
 
       resolve(json);
@@ -48,10 +46,6 @@ function readExcel(file) {
 
 }
 
-// ======================================
-// UPDATE LOADER TEXT
-// ======================================
-
 function updateLoader(text) {
 
   document.getElementById(
@@ -59,10 +53,6 @@ function updateLoader(text) {
   ).innerText = text;
 
 }
-
-// ======================================
-// SHOW LOADER
-// ======================================
 
 function showLoader() {
 
@@ -72,10 +62,6 @@ function showLoader() {
 
 }
 
-// ======================================
-// HIDE LOADER
-// ======================================
-
 function hideLoader() {
 
   document.getElementById(
@@ -83,10 +69,6 @@ function hideLoader() {
   ).style.display = "none";
 
 }
-
-// ======================================
-// RUN BUTTON
-// ======================================
 
 document
   .getElementById("runBtn")
@@ -97,10 +79,6 @@ document
       try {
 
         showLoader();
-
-        // ======================================
-        // GET FILES
-        // ======================================
 
         const mpFile =
           document.getElementById(
@@ -132,33 +110,6 @@ document
             "allFile"
           ).files[0];
 
-        // ======================================
-        // VALIDATION
-        // ======================================
-
-        if (
-          !mpFile ||
-          !basicFile ||
-          !contentFile ||
-          !tcFile ||
-          !zecomFile ||
-          !allFile
-        ) {
-
-          alert(
-            "Please upload all files"
-          );
-
-          hideLoader();
-
-          return;
-
-        }
-
-        // ======================================
-        // READ MP FILE
-        // ======================================
-
         updateLoader(
           "Reading MP File..."
         );
@@ -167,10 +118,6 @@ document
           await readExcel(
             mpFile
           );
-
-        // ======================================
-        // READ BASIC FILE
-        // ======================================
 
         updateLoader(
           "Reading Basic Info File..."
@@ -181,22 +128,14 @@ document
             basicFile
           );
 
-        // ======================================
-        // READ CONTENT FILE
-        // ======================================
-
         updateLoader(
-          "Reading Tracker / Content File..."
+          "Reading Tracker File..."
         );
 
         const contentData =
           await readExcel(
             contentFile
           );
-
-        // ======================================
-        // READ TC FILE
-        // ======================================
 
         updateLoader(
           "Reading TC File..."
@@ -207,22 +146,15 @@ document
             tcFile
           );
 
-        // ======================================
-        // READ ZECOM FILE
-        // ======================================
-
         updateLoader(
           "Reading zEcom File..."
         );
 
         const zecomData =
           await readExcel(
-            zecomFile
+            zecomFile,
+            2
           );
-
-        // ======================================
-        // READ ALL FILE
-        // ======================================
 
         updateLoader(
           "Reading All File..."
@@ -232,10 +164,6 @@ document
           await readExcel(
             allFile
           );
-
-        // ======================================
-        // RUN VALIDATION
-        // ======================================
 
         updateLoader(
           "Running Validation..."
@@ -251,28 +179,12 @@ document
             allData
           );
 
-        // ======================================
-        // RENDER TABLE
-        // ======================================
-
-        updateLoader(
-          "Preparing Output..."
-        );
-
         renderTable(
           finalOutput
         );
 
-        renderSummary(
-          finalOutput
-        );
-
-        // ======================================
-        // COMPLETE
-        // ======================================
-
         updateLoader(
-          "Completed Successfully ✅"
+          "Completed Successfully"
         );
 
         setTimeout(() => {
@@ -288,210 +200,12 @@ document
         console.error(err);
 
         alert(
-          "Error while processing files"
+          "Error Processing Files"
         );
 
         hideLoader();
 
       }
-
-    }
-
-  );
-
-// ======================================
-// RENDER SUMMARY
-// ======================================
-
-function renderSummary(data) {
-
-  const summary =
-    document.getElementById(
-      "summary"
-    );
-
-  const total =
-    data.length;
-
-  const issues =
-    data.filter(
-      x =>
-        x["Final Check"] ===
-        "False"
-    ).length;
-
-  const stockIssues =
-    data.filter(
-      x =>
-        x["Stock Check"] ===
-        "False"
-    ).length;
-
-  const allGood =
-    data.filter(
-      x =>
-        x["Action"] ===
-        "All Good"
-    ).length;
-
-  summary.innerHTML = `
-
-    <div class="summary-card">
-      <h3>Total</h3>
-      <h2>${total}</h2>
-    </div>
-
-    <div class="summary-card">
-      <h3>Status Issues</h3>
-      <h2>${issues}</h2>
-    </div>
-
-    <div class="summary-card">
-      <h3>Stock Issues</h3>
-      <h2>${stockIssues}</h2>
-    </div>
-
-    <div class="summary-card">
-      <h3>All Good</h3>
-      <h2>${allGood}</h2>
-    </div>
-
-  `;
-
-}
-
-// ======================================
-// RENDER TABLE
-// ======================================
-
-function renderTable(data) {
-
-  const table =
-    document.getElementById(
-      "outputTable"
-    );
-
-  table.innerHTML = "";
-
-  if (!data.length) {
-
-    table.innerHTML =
-      "<tr><td>No Data</td></tr>";
-
-    return;
-
-  }
-
-  // HEADER
-
-  const headers =
-    Object.keys(data[0]);
-
-  let headerHTML =
-    "<tr>";
-
-  headers.forEach(h => {
-
-    headerHTML +=
-      `<th>${h}</th>`;
-
-  });
-
-  headerHTML +=
-    "</tr>";
-
-  table.innerHTML +=
-    headerHTML;
-
-  // ROWS
-
-  data.forEach(row => {
-
-    let rowClass =
-      "green";
-
-    if (
-      row["Final Check"] ===
-      "False"
-    ) {
-
-      rowClass =
-        "red";
-
-    }
-
-    else if (
-      row["Stock Check"] ===
-      "False"
-    ) {
-
-      rowClass =
-        "yellow";
-
-    }
-
-    let tr =
-      `<tr class="${rowClass}">`;
-
-    headers.forEach(h => {
-
-      tr +=
-        `<td>${row[h]}</td>`;
-
-    });
-
-    tr +=
-      "</tr>";
-
-    table.innerHTML +=
-      tr;
-
-  });
-
-}
-
-// ======================================
-// DOWNLOAD OUTPUT
-// ======================================
-
-document
-  .getElementById(
-    "downloadBtn"
-  )
-  .addEventListener(
-    "click",
-    () => {
-
-      if (
-        !finalOutput.length
-      ) {
-
-        alert(
-          "No Output Found"
-        );
-
-        return;
-
-      }
-
-      const worksheet =
-        XLSX.utils.json_to_sheet(
-          finalOutput
-        );
-
-      const workbook =
-        XLSX.utils.book_new();
-
-      XLSX.utils.book_append_sheet(
-        workbook,
-        worksheet,
-        "Output"
-      );
-
-      XLSX.writeFile(
-        workbook,
-        "Shopee_Validation_Output.xlsx"
-      );
 
     }
 
