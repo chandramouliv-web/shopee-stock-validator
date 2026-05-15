@@ -1,3 +1,7 @@
+// =========================
+// app.js
+// =========================
+
 let finalOutput = [];
 
 const loaderContainer =
@@ -25,6 +29,13 @@ document
 
       const mpData =
         await readExcel("mpFile");
+
+      updateLoader(
+        "Reading Basic Info File..."
+      );
+
+      const basicData =
+        await readExcel("basicFile");
 
       updateLoader(
         "Reading Tracker File..."
@@ -62,6 +73,7 @@ document
 
       finalOutput = runValidation(
         mpData,
+        basicData,
         contentData,
         tcData,
         zecomData,
@@ -261,12 +273,6 @@ function renderTable(data) {
     ) {
 
       rowClass = "red";
-
-    } else if (
-      row["Action"].includes("Reserved")
-    ) {
-
-      rowClass = "yellow";
 
     } else {
 
