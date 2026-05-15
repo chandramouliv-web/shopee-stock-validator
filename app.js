@@ -1,33 +1,65 @@
 let finalOutput = [];
 
+const loaderContainer =
+  document.getElementById(
+    "loaderContainer"
+  );
+
+const loaderText =
+  document.getElementById(
+    "loaderText"
+  );
+
 document
   .getElementById("runBtn")
   .addEventListener("click", async () => {
 
     try {
 
-      document.getElementById("runBtn").innerText =
-        "Processing...";
+      loaderContainer.style.display =
+        "flex";
 
-      // Read files one by one
+      updateLoader(
+        "Reading MP File..."
+      );
+
       const mpData =
         await readExcel("mpFile");
+
+      updateLoader(
+        "Reading Tracker File..."
+      );
 
       const contentData =
         await readExcel("contentFile");
 
+      updateLoader(
+        "Reading TC File..."
+      );
+
       const tcData =
         await readExcel("tcFile");
+
+      updateLoader(
+        "Reading zEcom File..."
+      );
 
       const zecomData =
         await readExcel("zecomFile");
 
+      updateLoader(
+        "Reading All File..."
+      );
+
       const allData =
         await readExcel("allFile");
 
-      console.log("Files Loaded");
+      updateLoader(
+        "Running Validation..."
+      );
 
-      // Run validation
+      await delay(100);
+
       finalOutput = runValidation(
         mpData,
         contentData,
@@ -36,29 +68,56 @@ document
         allData
       );
 
-      console.log(finalOutput);
+      updateLoader(
+        "Rendering Output..."
+      );
 
-      // Render
+      await delay(100);
+
       renderSummary(finalOutput);
 
       renderTable(finalOutput);
 
-      document.getElementById("runBtn").innerText =
-        "🚀 Run Validation";
+      updateLoader(
+        "Completed Successfully ✅"
+      );
+
+      setTimeout(() => {
+
+        loaderContainer.style.display =
+          "none";
+
+      }, 2000);
 
     } catch (err) {
 
       console.error(err);
 
+      updateLoader(
+        "Error while processing ❌"
+      );
+
       alert(
         "Error while processing files.\nCheck browser console."
       );
 
-      document.getElementById("runBtn").innerText =
-        "🚀 Run Validation";
     }
 
   });
+
+function updateLoader(text) {
+
+  loaderText.innerText = text;
+
+}
+
+function delay(ms) {
+
+  return new Promise(resolve =>
+    setTimeout(resolve, ms)
+  );
+
+}
 
 async function readExcel(id) {
 
@@ -119,7 +178,9 @@ async function readExcel(id) {
 function renderSummary(data) {
 
   const summary =
-    document.getElementById("summary");
+    document.getElementById(
+      "summary"
+    );
 
   const total = data.length;
 
@@ -167,7 +228,9 @@ function renderSummary(data) {
 function renderTable(data) {
 
   const table =
-    document.getElementById("outputTable");
+    document.getElementById(
+      "outputTable"
+    );
 
   table.innerHTML = "";
 
@@ -176,17 +239,15 @@ function renderTable(data) {
   const headers =
     Object.keys(data[0]);
 
-  // Header
   let html = "<tr>";
 
   headers.forEach(h => {
+
     html += `<th>${h}</th>`;
+
   });
 
   html += "</tr>";
-
-  // LIMIT RENDER
-  // Prevent browser freeze
 
   const limitedData =
     data.slice(0, 3000);
@@ -230,7 +291,9 @@ function renderTable(data) {
 }
 
 document
-  .getElementById("downloadBtn")
+  .getElementById(
+    "downloadBtn"
+  )
   .addEventListener("click", () => {
 
     if (!finalOutput.length) {
@@ -241,7 +304,9 @@ document
     }
 
     const worksheet =
-      XLSX.utils.json_to_sheet(finalOutput);
+      XLSX.utils.json_to_sheet(
+        finalOutput
+      );
 
     const workbook =
       XLSX.utils.book_new();
