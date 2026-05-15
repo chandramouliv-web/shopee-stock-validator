@@ -1,3 +1,7 @@
+// =========================
+// validator.js
+// =========================
+
 function clean(value) {
 
   return String(value || "")
@@ -42,6 +46,7 @@ function findKey(row, possibleKeys) {
 
 function runValidation(
   mpData,
+  basicData,
   contentData,
   tcData,
   zecomData,
@@ -49,6 +54,7 @@ function runValidation(
 ) {
 
   const mpRow = mpData[0];
+  const basicRow = basicData[0];
   const contentRow = contentData[0];
   const tcRow = tcData[0];
   const zecomRow = zecomData[0];
@@ -66,16 +72,16 @@ function runValidation(
       "Product ID"
     ]);
 
-  const mpStatusKey =
-    findKey(mpRow, [
-      "Item status",
-      "MP Status"
-    ]);
-
   const mpStockKey =
     findKey(mpRow, [
       "In stock",
       "MP Stock"
+    ]);
+
+  const basicProductKey =
+    findKey(basicRow, [
+      "Product ID",
+      "productId"
     ]);
 
   const contentSkuKey =
@@ -129,6 +135,18 @@ function runValidation(
     findKey(allRow, [
       "MyStock-YCH-MY reservedQuantity"
     ]);
+
+  const activeProductMap = {};
+
+  for (let r of basicData) {
+
+    const productId =
+      clean(r[basicProductKey]);
+
+    activeProductMap[productId] =
+      true;
+
+  }
 
   const articleMap = {};
   const ecomMap = {};
@@ -246,8 +264,7 @@ function runValidation(
       clean(r[mpProductKey]);
 
     const mpStatus =
-      clean(r[mpStatusKey]) ===
-      "ACTIVE"
+      activeProductMap[productId]
       ? "Active"
       : "Inactive";
 
@@ -257,10 +274,6 @@ function runValidation(
     const tcStatus =
       tcMap[sellerSku]?.tcStatus ||
       "Inactive";
-
-    const max0 =
-      tcMap[sellerSku]?.max0 ||
-      "No";
 
     const tcStock =
       stockMap[sellerSku]?.tcStock ||
