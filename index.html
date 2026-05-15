@@ -1,63 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Shopee Stock Validator</title>
 
-  <link rel="stylesheet" href="style.css">
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0"/>
+
+  <title>
+    Shopee Stock Validator
+  </title>
+
+  <link rel="stylesheet"
+        href="style.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 </head>
+
 <body>
 
 <div class="container">
 
-  <h1>📦 Shopee Stock Validation App</h1>
+  <h1>
+    📦 Shopee Stock Validator
+  </h1>
+
+  <!-- ===================== -->
+  <!-- FILE UPLOADS -->
+  <!-- ===================== -->
 
   <div class="upload-grid">
 
     <div class="card">
       <label>MP File</label>
-      <input type="file" id="mpFile" accept=".xlsx,.xls,.csv">
+      <input type="file"
+             id="mpFile"
+             accept=".xlsx,.xls,.csv">
     </div>
 
     <div class="card">
-      <label>Content File</label>
-      <input type="file" id="contentFile" accept=".xlsx,.xls,.csv">
+      <label>Tracker / Content File</label>
+      <input type="file"
+             id="contentFile"
+             accept=".xlsx,.xls,.csv">
     </div>
 
     <div class="card">
-      <label>TC Inventory</label>
-      <input type="file" id="tcFile" accept=".xlsx,.xls,.csv">
+      <label>TC File</label>
+      <input type="file"
+             id="tcFile"
+             accept=".xlsx,.xls,.csv">
     </div>
 
     <div class="card">
       <label>zEcom File</label>
-      <input type="file" id="zecomFile" accept=".xlsx,.xls,.csv">
+      <input type="file"
+             id="zecomFile"
+             accept=".xlsx,.xls,.csv">
     </div>
 
     <div class="card">
       <label>All File</label>
-      <input type="file" id="allFile" accept=".xlsx,.xls,.csv">
+      <input type="file"
+             id="allFile"
+             accept=".xlsx,.xls,.csv">
     </div>
 
   </div>
 
-  <button id="runBtn">🚀 Run Validation</button>
+  <!-- ===================== -->
+  <!-- BUTTON -->
+  <!-- ===================== -->
 
-  <div id="summary" class="summary"></div>
+  <button id="runBtn">
+    🚀 Run Validation
+  </button>
 
-  <div class="table-wrapper">
-    <table id="outputTable"></table>
+  <!-- ===================== -->
+  <!-- LOADER -->
+  <!-- ===================== -->
+
+  <div id="loaderContainer"
+       class="loader-container">
+
+    <div class="loader"></div>
+
+    <div id="loaderText">
+      Waiting to Start...
+    </div>
+
   </div>
 
-  <button id="downloadBtn">⬇ Download Output</button>
+  <!-- ===================== -->
+  <!-- SUMMARY -->
+  <!-- ===================== -->
+
+  <div id="summary"
+       class="summary">
+  </div>
+
+  <!-- ===================== -->
+  <!-- TABLE -->
+  <!-- ===================== -->
+
+  <div class="table-wrapper">
+
+    <table id="outputTable"></table>
+
+  </div>
+
+  <!-- ===================== -->
+  <!-- DOWNLOAD -->
+  <!-- ===================== -->
+
+  <button id="downloadBtn">
+    ⬇ Download Output
+  </button>
 
 </div>
 
 <script src="validator.js"></script>
+
 <script src="app.js"></script>
 
 </body>
+
 </html>
